@@ -1,4 +1,5 @@
 import sys
+from collections import defaultdict
 
 def build_loop_map(code):
     loop_map = {}
@@ -20,8 +21,7 @@ def build_loop_map(code):
     return loop_map
 
 def interpret(code):
-    tape_size = 30000
-    tape = [0] * tape_size
+    tape = defaultdict(int)
     pointer = 0
     loop_map = build_loop_map(code)
     result = []
@@ -34,12 +34,8 @@ def interpret(code):
             tape[pointer] = (tape[pointer] - 1) % 256
         elif code[i] == ">":
             pointer += 1
-            if pointer >= tape_size:
-                raise IndexError("Pointer moved beyond tape size.")
         elif code[i] == "<":
             pointer -= 1
-            if pointer < 0:
-                raise IndexError("Pointer moved before start of tape.")
         elif code[i] == ".":
             result.append(chr(tape[pointer]))
         elif code[i] == ",":
