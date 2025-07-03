@@ -19,7 +19,11 @@ def interpret(code):
         elif code[i] == ".":
             result.append(chr(tape[pointer]))
         elif code[i] == ",":
-            tape[pointer] = ord(input()[0])
+            try:
+                user_input = input("Input one character: ")
+                tape[pointer] = ord(user_input[0]) if user_input else 0
+            except EOFError:
+                tape[pointer] = 0
         elif code[i] == "[":
             if tape[pointer] == 0:
                 count = 1
