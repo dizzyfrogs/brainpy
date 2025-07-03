@@ -26,16 +26,24 @@ def build_loop_map(code):
 
     return loop_map
 
-def interpret(code, debug=False):
-    tape = defaultdict(int)
+def interpret(code, debug=False, tape_size=None):
+    tape = defaultdict(int) if tape_size is None else [0] * tape_size
     pointer = 0
     loop_map = build_loop_map(code)
     result = []
 
     def add(): tape[pointer] = (tape[pointer] + 1) % 256
     def sub(): tape[pointer] = (tape[pointer] - 1) % 256
-    def inc(): nonlocal pointer; pointer += 1
-    def dec(): nonlocal pointer; pointer -= 1
+    def inc():
+        nonlocal pointer
+        pointer += 1
+        if tape_size is not None and pointer >= tape_size:
+            raise MemoryError(f"Pointer out of bounds: {pointer} >= {tape_size}")
+    def dec(): 
+        nonlocal pointer
+        pointer -= 1
+        if tape_size is not None and pointer < 0:
+            raise MemoryError(f"Pointer out of bounds: {pointer} < 0")
     def output(): result.append(chr(tape[pointer]))
     def input_char():
         try:
@@ -96,6 +104,7 @@ def main():
     source_group.add_argument("-c", "--code", help="Execute Brainfuck code directly from the command line.")
 
     parser.add_argument("--debug", action="store_true", help="Enable debug mode to see execution step-by-step.")
+    parser.add_argument("--tape-size", type=int, default=None, help="Specify a fixed tape size (e.g., 30000). Default is infinite.")
 
     args = parser.parse_args()
 
@@ -117,7 +126,7 @@ def main():
     code = ''.join(c for c in raw_code if c in valid_chars)
 
     try:
-        final_output = interpret(code, debug=args.debug)
+        final_output = interpret(code, debug=args.debug, tape_size=args.tape_size)
         print(final_output, end="")
 
     except UserInterrupt as e:
