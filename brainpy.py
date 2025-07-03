@@ -52,7 +52,11 @@ def interpret(code, debug=False, tape_size=None, tape_wrap=False):
                     pointer = tape_size-1
                 else:
                     raise MemoryError(f"Pointer out of bounds: {pointer} < 0")
-    def output(): result.append(chr(tape[pointer]))
+    def output():
+        char = chr(tape[pointer])
+        result.append(char)
+        if not debug:
+            print(char, end='', flush=True)
     def input_char():
         try:
             user_input = input("Input one character: ")
@@ -69,21 +73,10 @@ def interpret(code, debug=False, tape_size=None, tape_wrap=False):
         ',': input_char
     }
 
-    STEP_WARNING_THRESHOLD = 10_000_000
-    warned = False
-    step_count = 0
     i = 0
 
     try:
         while i < len(code):
-            step_count += 1
-            if step_count >= STEP_WARNING_THRESHOLD and not warned:
-                print(
-                    f"\nWarning: Program has executed over {STEP_WARNING_THRESHOLD:,} steps. "
-                    "Press Ctrl+C to terminate and see partial output.",
-                    file=sys.stderr
-                )
-                warned = True
 
             cmd = code[i]
 
@@ -94,10 +87,10 @@ def interpret(code, debug=False, tape_size=None, tape_wrap=False):
             elif cmd == ']' and tape[pointer] != 0:
                 i = loop_map[i]
 
+            i += 1
+
             if debug:
                 print(f"[{i:04d}] {code[i]} | Ptr: {pointer:03d} | Val: {tape[pointer]:03d} | Output: {''.join(result)}")
-
-            i += 1
 
     except KeyboardInterrupt:
         raise UserInterrupt(result)
@@ -139,7 +132,8 @@ def main():
 
     try:
         final_output = interpret(code, debug=args.debug, tape_size=args.tape_size, tape_wrap=args.tape_wrap)
-        print(final_output, end="")
+        if args.debug:
+            print(f"\n--- Final Output---\n\n{final_output}", end="")
 
     except UserInterrupt as e:
         partial_output = ''.join(e.result)
