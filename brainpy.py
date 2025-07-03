@@ -54,8 +54,6 @@ def interpret(code):
         elif code[i] == "]":
             if tape[pointer] != 0:
                 i = loop_map[i]
-            else:
-                pass
         i += 1
     
     return ''.join(result)
