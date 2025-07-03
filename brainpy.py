@@ -1,7 +1,7 @@
 import sys
 
 def interpret(code):
-    tape_size = 1000
+    tape_size = 30000
     tape = [0] * tape_size
     pointer = 0
     result = []
