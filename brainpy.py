@@ -26,30 +26,37 @@ def interpret(code, debug=False):
     loop_map = build_loop_map(code)
     result = []
 
+    def add(): tape[pointer] = (tape[pointer] + 1) % 256
+    def sub(): tape[pointer] = (tape[pointer] - 1) % 256
+    def inc(): nonlocal pointer; pointer += 1
+    def dec(): nonlocal pointer; pointer -= 1
+    def output(): result.append(chr(tape[pointer]))
+    def input_char():
+        try:
+            user_input = input("Input one character: ")
+            tape[pointer] = ord(user_input[0]) if user_input else 0
+        except EOFError:
+            tape[pointer] = 0
+    
+    dispatch = {
+        '+': add,
+        '-': sub,
+        '>': inc,
+        '<': dec,
+        '.': output,
+        ',': input_char
+    }
+
     i = 0
     while i < len(code):
-        if code[i] == "+":
-            tape[pointer] = (tape[pointer] + 1) % 256
-        elif code[i] == "-":
-            tape[pointer] = (tape[pointer] - 1) % 256
-        elif code[i] == ">":
-            pointer += 1
-        elif code[i] == "<":
-            pointer -= 1
-        elif code[i] == ".":
-            result.append(chr(tape[pointer]))
-        elif code[i] == ",":
-            try:
-                user_input = input("Input one character: ")
-                tape[pointer] = ord(user_input[0]) if user_input else 0
-            except EOFError:
-                tape[pointer] = 0
-        elif code[i] == "[":
-            if tape[pointer] == 0:
-                i = loop_map[i]
-        elif code[i] == "]":
-            if tape[pointer] != 0:
-                i = loop_map[i]
+        cmd = code[i]
+        
+        if cmd in dispatch:
+            dispatch[cmd]()
+        elif cmd == '[' and tape[pointer] == 0:
+            i = loop_map[i]
+        elif cmd == ']' and tape[pointer] != 0:
+            i = loop_map[i]
 
         if debug:
             print(f"[{i}] {code[i]} | Ptr: {pointer} | Val: {tape[pointer]}")
