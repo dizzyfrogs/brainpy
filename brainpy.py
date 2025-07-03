@@ -33,9 +33,13 @@ def interpret(code):
         elif code[i] == "-":
             tape[pointer] = (tape[pointer] - 1) % 256
         elif code[i] == ">":
-            pointer = min(tape_size-1, pointer + 1)
+            pointer += 1
+            if pointer >= tape_size:
+                raise IndexError("Pointer moved beyond tape size.")
         elif code[i] == "<":
-            pointer = max(0, pointer - 1)
+            pointer -= 1
+            if pointer < 0:
+                raise IndexError("Pointer moved before start of tape.")
         elif code[i] == ".":
             result.append(chr(tape[pointer]))
         elif code[i] == ",":
