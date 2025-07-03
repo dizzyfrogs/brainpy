@@ -1,3 +1,5 @@
+import sys
+
 def interpret(code):
     tape_size = 1000
     tape = [0] * tape_size
@@ -41,3 +43,18 @@ def interpret(code):
         i += 1
     
     return ''.join(result)
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2 or not sys.argv[1].endswith(".bf"):
+        print("Usage: python brainpy.py program.bf")
+        sys.exit(1)
+
+    with open(sys.argv[1], "r") as f:
+        raw_code = f.read()
+
+    # Strip invalid characters
+    valid_chars = set("+-<>[],.")
+    code = ''.join(c for c in raw_code if c in valid_chars)
+
+    output = interpret(code)
+    print(output)
