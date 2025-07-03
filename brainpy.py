@@ -1,6 +1,10 @@
 import sys
 from collections import defaultdict
 
+class UserInterrupt(Exception):
+    def __init__(self, result):
+        self.result = result
+
 def build_loop_map(code):
     loop_map = {}
     stack = []
@@ -37,7 +41,7 @@ def interpret(code, debug=False):
             tape[pointer] = ord(user_input[0]) if user_input else 0
         except EOFError:
             tape[pointer] = 0
-    
+
     dispatch = {
         '+': add,
         '-': sub,
@@ -47,45 +51,79 @@ def interpret(code, debug=False):
         ',': input_char
     }
 
+    STEP_WARNING_THRESHOLD = 10_000_000
+    warned = False
+    step_count = 0
     i = 0
-    while i < len(code):
-        cmd = code[i]
-        
-        if cmd in dispatch:
-            dispatch[cmd]()
-        elif cmd == '[' and tape[pointer] == 0:
-            i = loop_map[i]
-        elif cmd == ']' and tape[pointer] != 0:
-            i = loop_map[i]
 
-        if debug:
-            print(f"[{i}] {code[i]} | Ptr: {pointer} | Val: {tape[pointer]}")
+    try:
+        while i < len(code):
+            step_count += 1
+            if step_count >= STEP_WARNING_THRESHOLD and not warned:
+                print(
+                    f"\nWarning: Program has executed over {STEP_WARNING_THRESHOLD:,} steps. "
+                    "Press Ctrl+C to terminate and see partial output.",
+                    file=sys.stderr
+                )
+                warned = True
 
-        i += 1
-    
+            cmd = code[i]
+
+            if cmd in dispatch:
+                dispatch[cmd]()
+            elif cmd == '[' and tape[pointer] == 0:
+                i = loop_map[i]
+            elif cmd == ']' and tape[pointer] != 0:
+                i = loop_map[i]
+
+            if debug:
+                print(f"[{i:04d}] {code[i]} | Ptr: {pointer:03d} | Val: {tape[pointer]:03d} | Output: {''.join(result)}")
+
+            i += 1
+            
+    except KeyboardInterrupt:
+        raise UserInterrupt(result)
+
     return ''.join(result)
 
 def main():
     args = sys.argv[1:]
     if not args or (args[0].startswith("--") and len(args) == 1):
-        print("Usage: python brainpy.py program.bf [--debug]")
+        print(f"Usage: python {sys.argv[0]} program.bf [--debug]")
         sys.exit(1)
 
     debug = "--debug" in args
-    filename = [arg for arg in args if arg.endswith(".bf") or arg.endswith(".b")]
-    
-    if not filename:
-        print("Error: Missing .bf file.")
+    try:
+        filename = next(arg for arg in args if arg.endswith((".bf", ".b")))
+    except StopIteration:
+        print("Error: Missing .bf or .b file.", file=sys.stderr)
         sys.exit(1)
 
-    with open(filename[0], "r") as f:
-        raw_code = f.read()
+    try:
+        with open(filename, "r") as f:
+            raw_code = f.read()
+    except FileNotFoundError:
+        print(f"Error: File not found at '{filename}'", file=sys.stderr)
+        sys.exit(1)
 
     valid_chars = set("+-<>[],.")
     code = ''.join(c for c in raw_code if c in valid_chars)
 
-    output = interpret(code, debug=debug)
-    print(output, end="")
+    try:
+        final_output = interpret(code, debug=debug)
+        print(final_output, end="")
+
+    except UserInterrupt as e:
+        partial_output = ''.join(e.result)
+        print(partial_output, end="")
+        print("\n\n[Partial Output] Execution interrupted by user (Ctrl+C).", file=sys.stderr)
+
+    except (SyntaxError, KeyError) as e:
+        print(f"\n[Error] {e}", file=sys.stderr)
+
+    except KeyboardInterrupt:
+        print("\n[No output generated] Execution interrupted very early.", file=sys.stderr)
+
 
 if __name__ == "__main__":
     main()
