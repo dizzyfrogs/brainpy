@@ -1,3 +1,4 @@
+import argparse
 import sys
 from collections import defaultdict
 
@@ -88,30 +89,35 @@ def interpret(code, debug=False):
     return ''.join(result)
 
 def main():
-    args = sys.argv[1:]
-    if not args or (args[0].startswith("--") and len(args) == 1):
-        print(f"Usage: python {sys.argv[0]} program.bf [--debug]")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="A Brainfuck interpreter in Python.")
+    
+    source_group = parser.add_mutually_exclusive_group(required=True)
+    source_group.add_argument("filename", nargs='?', default=None, help="The .bf or .b file to execute.")
+    source_group.add_argument("-c", "--code", help="Execute Brainfuck code directly from the command line.")
 
-    debug = "--debug" in args
-    try:
-        filename = next(arg for arg in args if arg.endswith((".bf", ".b")))
-    except StopIteration:
-        print("Error: Missing .bf or .b file.", file=sys.stderr)
-        sys.exit(1)
+    parser.add_argument("--debug", action="store_true", help="Enable debug mode to see execution step-by-step.")
 
-    try:
-        with open(filename, "r") as f:
-            raw_code = f.read()
-    except FileNotFoundError:
-        print(f"Error: File not found at '{filename}'", file=sys.stderr)
-        sys.exit(1)
+    args = parser.parse_args()
+
+    if args.code:
+        raw_code = args.code
+    else:
+        try:
+            with open(args.filename, "r") as f:
+                raw_code = f.read()
+        except FileNotFoundError:
+            print(f"Error: File not found at '{args.filename}'", file=sys.stderr)
+            sys.exit(1)
+        except TypeError:
+             print("Error: No input file specified.", file=sys.stderr)
+             parser.print_help(sys.stderr)
+             sys.exit(1)
 
     valid_chars = set("+-<>[],.")
     code = ''.join(c for c in raw_code if c in valid_chars)
 
     try:
-        final_output = interpret(code, debug=debug)
+        final_output = interpret(code, debug=args.debug)
         print(final_output, end="")
 
     except UserInterrupt as e:
@@ -119,7 +125,7 @@ def main():
         print(partial_output, end="")
         print("\n\n[Partial Output] Execution interrupted by user (Ctrl+C).", file=sys.stderr)
 
-    except (SyntaxError, KeyError) as e:
+    except (SyntaxError, KeyError, MemoryError) as e:
         print(f"\n[Error] {e}", file=sys.stderr)
 
     except KeyboardInterrupt:
