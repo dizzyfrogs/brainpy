@@ -26,7 +26,7 @@ def build_loop_map(code):
 
     return loop_map
 
-def interpret(code, debug=False, tape_size=None):
+def interpret(code, debug=False, tape_size=None, tape_wrap=False):
     tape = defaultdict(int) if tape_size is None else [0] * tape_size
     pointer = 0
     loop_map = build_loop_map(code)
@@ -37,13 +37,21 @@ def interpret(code, debug=False, tape_size=None):
     def inc():
         nonlocal pointer
         pointer += 1
-        if tape_size is not None and pointer >= tape_size:
-            raise MemoryError(f"Pointer out of bounds: {pointer} >= {tape_size}")
+        if tape_size is not None:
+            if pointer >= tape_size:
+                if tape_wrap:
+                    pointer = 0
+                else:
+                    raise MemoryError(f"Pointer out of bounds: {pointer} >= {tape_size}")
     def dec(): 
         nonlocal pointer
         pointer -= 1
-        if tape_size is not None and pointer < 0:
-            raise MemoryError(f"Pointer out of bounds: {pointer} < 0")
+        if tape_size is not None:
+            if pointer < 0:
+                if tape_wrap:
+                    pointer = tape_size-1
+                else:
+                    raise MemoryError(f"Pointer out of bounds: {pointer} < 0")
     def output(): result.append(chr(tape[pointer]))
     def input_char():
         try:
@@ -105,8 +113,12 @@ def main():
 
     parser.add_argument("--debug", action="store_true", help="Enable debug mode to see execution step-by-step.")
     parser.add_argument("--tape-size", type=int, default=None, help="Specify a fixed tape size (e.g., 30000). Default is infinite.")
+    parser.add_argument("--tape-wrap", action="store_true", help="Enable tape wrapping for fixed-size tapes. Requires --tape-size.")
 
     args = parser.parse_args()
+
+    if args.tape_wrap and args.tape_size is None:
+        parser.error("--tape-wrap requires --tape-size to be set.")
 
     if args.code:
         raw_code = args.code
@@ -126,7 +138,7 @@ def main():
     code = ''.join(c for c in raw_code if c in valid_chars)
 
     try:
-        final_output = interpret(code, debug=args.debug, tape_size=args.tape_size)
+        final_output = interpret(code, debug=args.debug, tape_size=args.tape_size, tape_wrap=args.tape_wrap)
         print(final_output, end="")
 
     except UserInterrupt as e:
