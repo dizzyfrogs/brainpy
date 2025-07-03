@@ -1,9 +1,29 @@
 import sys
 
+def build_loop_map(code):
+    loop_map = {}
+    stack = []
+
+    for i, char in enumerate(code):
+        if char == "[":
+            stack.append(i)
+        elif char == "]":
+            if not stack:
+                raise SyntaxError(f"Unmatched closing bracket at position {i}")
+            start = stack.pop()
+            loop_map[start] = i
+            loop_map[i] = start
+
+    if stack:
+        raise SyntaxError(f"Unmatched opening bracket(s) at position(s): {stack}")
+
+    return loop_map
+
 def interpret(code):
     tape_size = 30000
     tape = [0] * tape_size
     pointer = 0
+    loop_map = build_loop_map(code)
     result = []
 
     i = 0
@@ -26,24 +46,12 @@ def interpret(code):
                 tape[pointer] = 0
         elif code[i] == "[":
             if tape[pointer] == 0:
-                count = 1
-                while count > 0:
-                    i += 1
-                    if code[i] == "[":
-                        count += 1
-                    elif code[i] == "]":
-                        count -= 1
+                i = loop_map[i]
         elif code[i] == "]":
             if tape[pointer] != 0:
-                count = 1
-                while count > 0:
-                    i -= 1
-                    if code[i] == "]":
-                        count += 1
-                    elif code[i] == "[":
-                        count -= 1
-        else:
-            pass
+                i = loop_map[i]
+            else:
+                pass
         i += 1
     
     return ''.join(result)
