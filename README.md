@@ -54,7 +54,7 @@ python brainpy.py -c "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+
 
 This configuration micmics many classic Brainfuck interpreters.
 ```command
-python mandelbrot.bf --tape-size 30000 --tape-wrap
+python brainpy.py mandelbrot.bf --tape-size 30000 --tape-wrap
 ```
 
 **4. Enable debug mode**
