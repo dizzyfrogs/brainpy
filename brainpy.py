@@ -67,4 +67,4 @@ if __name__ == "__main__":
     code = ''.join(c for c in raw_code if c in valid_chars)
 
     output = interpret(code)
-    print(output)
+    print(output, end="")
