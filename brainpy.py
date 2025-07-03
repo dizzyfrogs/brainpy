@@ -20,7 +20,7 @@ def build_loop_map(code):
 
     return loop_map
 
-def interpret(code):
+def interpret(code, debug=False):
     tape = defaultdict(int)
     pointer = 0
     loop_map = build_loop_map(code)
@@ -50,21 +50,35 @@ def interpret(code):
         elif code[i] == "]":
             if tape[pointer] != 0:
                 i = loop_map[i]
+
+        if debug:
+            print(f"[{i}] {code[i]} | Ptr: {pointer} | Val: {tape[pointer]}")
+
         i += 1
     
     return ''.join(result)
 
-if __name__ == "__main__":
-    if len(sys.argv) != 2 or not sys.argv[1].endswith(".bf"):
-        print("Usage: python brainpy.py program.bf")
+def main():
+    args = sys.argv[1:]
+    if not args or (args[0].startswith("--") and len(args) == 1):
+        print("Usage: python brainpy.py program.bf [--debug]")
         sys.exit(1)
 
-    with open(sys.argv[1], "r") as f:
+    debug = "--debug" in args
+    filename = [arg for arg in args if arg.endswith(".bf") or arg.endswith(".b")]
+    
+    if not filename:
+        print("Error: Missing .bf file.")
+        sys.exit(1)
+
+    with open(filename[0], "r") as f:
         raw_code = f.read()
 
-    # Strip invalid characters
     valid_chars = set("+-<>[],.")
     code = ''.join(c for c in raw_code if c in valid_chars)
 
-    output = interpret(code)
+    output = interpret(code, debug=debug)
     print(output, end="")
+
+if __name__ == "__main__":
+    main()
