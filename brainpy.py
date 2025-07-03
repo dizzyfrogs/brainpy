@@ -4,6 +4,7 @@ from collections import defaultdict
 class UserInterrupt(Exception):
     def __init__(self, result):
         self.result = result
+        super().__init__("Execution interrupted by user.")
 
 def build_loop_map(code):
     loop_map = {}
@@ -80,7 +81,7 @@ def interpret(code, debug=False):
                 print(f"[{i:04d}] {code[i]} | Ptr: {pointer:03d} | Val: {tape[pointer]:03d} | Output: {''.join(result)}")
 
             i += 1
-            
+
     except KeyboardInterrupt:
         raise UserInterrupt(result)
 
