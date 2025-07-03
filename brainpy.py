@@ -1,22 +1,41 @@
 def interpret(code):
-    tape = [0] * 1000
+    tape_size = 1000
+    tape = [0] * tape_size
     pointer = 0
     result = []
 
     i = 0
     while i < len(code):
         if code[i] == "+":
-            tape[pointer] = tape[pointer] + 1 if tape[pointer] <= 255 else 0
+            tape[pointer] = (tape[pointer] + 1) % 256
         elif code[i] == "-":
-            tape[pointer] = tape[pointer] - 1 if tape[pointer] >= 0 else 255
+            tape[pointer] = (tape[pointer] - 1) % 256
         elif code[i] == ">":
-            pointer += 1
+            pointer = min(tape_size-1, pointer + 1)
         elif code[i] == "<":
-            pointer -= 1
+            pointer = max(0, pointer - 1)
         elif code[i] == ".":
-            result += chr(tape[pointer])
+            result.append(chr(tape[pointer]))
         elif code[i] == ",":
-            tape[pointer] = ord(input())
+            tape[pointer] = ord(input()[0])
+        elif code[i] == "[":
+            if tape[pointer] == 0:
+                count = 1
+                while count > 0:
+                    i += 1
+                    if code[i] == "[":
+                        count += 1
+                    elif code[i] == "]":
+                        count -= 1
+        elif code[i] == "]":
+            if tape[pointer] != 0:
+                count = 1
+                while count > 0:
+                    i -= 1
+                    if code[i] == "]":
+                        count += 1
+                    elif code[i] == "[":
+                        count -= 1
         else:
             pass
         i += 1
